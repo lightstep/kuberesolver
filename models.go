@@ -35,8 +35,10 @@ type Subset struct {
 }
 
 type Address struct {
-	IP        string           `json:"ip"`
-	TargetRef *ObjectReference `json:"targetRef,omitempty"`
+	IP         string            `json:"ip"`
+	TargetRef  *ObjectReference  `json:"targetRef,omitempty"`
+	NodeName   string            `json:"nodeName"`
+	NodeLabels map[string]string `json:"labels"`
 }
 
 type ObjectReference struct {
@@ -47,4 +49,12 @@ type ObjectReference struct {
 type Port struct {
 	Name string `json:"name"`
 	Port int    `json:"port"`
+}
+
+type Nodes struct {
+	Items []Node `json:"items"`
+}
+type Node struct {
+	Name   string            `json:"name"`
+	Labels map[string]string `json:"labels"`
 }

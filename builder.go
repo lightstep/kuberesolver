@@ -14,6 +14,8 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/grpclog"
 	"google.golang.org/grpc/resolver"
+
+	"google.golang.org/grpc/attributes"
 )
 
 const (
@@ -231,12 +233,21 @@ func (k *kResolver) makeAddresses(e Endpoints) ([]resolver.Address, string) {
 			newAddrs = append(newAddrs, resolver.Address{
 				Type:       resolver.Backend,
 				Addr:       net.JoinHostPort(address.IP, port),
+				Attributes: labelsToAttributes(address.NodeLabels),
 				ServerName: sname,
 				Metadata:   nil,
 			})
 		}
 	}
 	return newAddrs, ""
+}
+
+func labelsToAttributes(m map[string]string) *attributes.Attributes {
+	a := attributes.New()
+	for k, v := range m {
+		a = a.WithValues(k, v)
+	}
+	return a
 }
 
 func (k *kResolver) handle(e Endpoints) {

@@ -93,6 +93,15 @@ func NewInsecureK8sClient(apiURL string) K8sClient {
 }
 
 func getEndpoints(client K8sClient, namespace, targetName string) (Endpoints, error) {
+	nodes, err := getNodes(client, namespace)
+	if err != nil {
+		return Endpoints{}, err
+	}
+	nodeMap := make(map[string]Node, len(nodes.Items))
+	for _, n := range nodes.Items {
+		nodeMap[n.Name] = n
+	}
+
 	u, err := url.Parse(fmt.Sprintf("%s/api/v1/namespaces/%s/endpoints/%s",
 		client.Host(), namespace, targetName))
 	if err != nil {
@@ -112,6 +121,18 @@ func getEndpoints(client K8sClient, namespace, targetName string) (Endpoints, er
 	}
 	result := Endpoints{}
 	err = json.NewDecoder(resp.Body).Decode(&result)
+
+	for i, r := range result.Subsets {
+		for j, a := range r.Addresses {
+			node, ok := nodeMap[a.NodeName]
+			if ok {
+				result.Subsets[i].Addresses[j].NodeLabels = node.Labels
+			} else {
+				// log??
+			}
+		}
+	}
+
 	return result, err
 }
 
@@ -134,4 +155,27 @@ func watchEndpoints(client K8sClient, namespace, targetName string) (watchInterf
 		return nil, fmt.Errorf("invalid response code %d", resp.StatusCode)
 	}
 	return newStreamWatcher(resp.Body), nil
+}
+
+func getNodes(client K8sClient, namespace string) (Nodes, error) {
+	u, err := url.Parse(fmt.Sprintf("%s/api/v1/namespaces/%s/nodes",
+		client.Host(), namespace))
+	if err != nil {
+		return Nodes{}, err
+	}
+	req, err := client.GetRequest(u.String())
+	if err != nil {
+		return Nodes{}, err
+	}
+	resp, err := client.Do(req)
+	if err != nil {
+		return Nodes{}, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return Nodes{}, fmt.Errorf("invalid response code %d", resp.StatusCode)
+	}
+	result := Nodes{}
+	err = json.NewDecoder(resp.Body).Decode(&result)
+	return result, err
 }
