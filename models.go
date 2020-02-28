@@ -54,6 +54,7 @@ type Port struct {
 type Nodes struct {
 	Items []Node `json:"items"`
 }
+
 type Node struct {
 	Name   string            `json:"name"`
 	Labels map[string]string `json:"labels"`
