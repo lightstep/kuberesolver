@@ -38,7 +38,7 @@ var (
 		},
 		[]string{"target"},
 	)
-	NodeLabelsKey nodeLabelsKeyType
+	nodeLabelsKey nodeLabelsKeyType
 )
 type nodeLabelsKeyType struct{}
 
@@ -246,7 +246,16 @@ func (k *kResolver) makeAddresses(e Endpoints) ([]resolver.Address, string) {
 }
 
 func labelsToAttributes(m map[string]string) *attributes.Attributes {
-	return attributes.New(NodeLabelsKey, m)
+	return attributes.New(nodeLabelsKey, m)
+}
+
+func GetNodeLabels(a *attributes.Attributes) map[string]string {
+	v, ok := a.Value(nodeLabelsKey).(map[string]string)
+	if !ok {
+		return nil
+	}
+
+	return v
 }
 
 func (k *kResolver) handle(e Endpoints) {
